@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Place = require("../models/Place");
 
-// ✅ Get all places
+// ✅ Get all places (local DB)
 router.get("/", async (req, res) => {
   try {
     const places = await Place.find();
@@ -13,13 +13,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ Get single place by ID
+// ✅ Get single place by ID (local DB)
 router.get("/:id", async (req, res) => {
   try {
     const place = await Place.findById(req.params.id);
-    if (!place) {
-      return res.status(404).json({ error: "Place not found" });
-    }
+    if (!place) return res.status(404).json({ error: "Place not found" });
     res.json(place);
   } catch (err) {
     console.error("Error fetching place:", err);
@@ -27,10 +25,9 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ✅ Add a new place
+// ✅ Add a new place (local DB)
 router.post("/", async (req, res) => {
   const { name, location, description, image } = req.body;
-
   if (!name || !location || !description || !image) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -46,19 +43,15 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ✅ Update a place (Edit)
+// ✅ Update a place (local DB)
 router.put("/:id", async (req, res) => {
   try {
-    const updatedPlace = await Place.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const updatedPlace = await Place.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
-    if (!updatedPlace) {
-      return res.status(404).json({ error: "Place not found" });
-    }
-
+    if (!updatedPlace) return res.status(404).json({ error: "Place not found" });
     res.json(updatedPlace);
   } catch (err) {
     console.error("Error updating place:", err);
@@ -66,13 +59,11 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// ✅ Delete a place
+// ✅ Delete a place (local DB)
 router.delete("/:id", async (req, res) => {
   try {
     const deletedPlace = await Place.findByIdAndDelete(req.params.id);
-    if (!deletedPlace) {
-      return res.status(404).json({ error: "Place not found" });
-    }
+    if (!deletedPlace) return res.status(404).json({ error: "Place not found" });
     res.json({ message: "Place deleted successfully" });
   } catch (err) {
     console.error("Error deleting place:", err);

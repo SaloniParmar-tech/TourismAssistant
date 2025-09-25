@@ -8,6 +8,7 @@ import PlaceDetails from "./pages/PlaceDetails";
 import Home from "./pages/Home";
 import AuthModal from "./components/AuthModal";
 import GeminiPage from "./pages/GeminiPage";
+import ExternalPlaceDetails from "./pages/ExternalPlaceDetails";
 
 export default function App() {
   const [message, setMessage] = useState(null);
@@ -54,6 +55,7 @@ export default function App() {
           />
           <Route path="/places/edit/:id" element={<EditPlace setMessage={setMessage} />} />
           <Route path="/places/:id" element={<PlaceDetails isLoggedIn={isLoggedIn} currentUser={{ id: "USER_ID" }}/>} />
+          <Route path="/places/external/:id" element={<ExternalPlaceDetails />} />
           <Route path="/gemini" element={<GeminiPage/>} />
         </Routes>
 
