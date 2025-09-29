@@ -3,75 +3,67 @@ import { Link } from "react-router-dom";
 
 export default function Places({ setMessage }) {
   const [places, setPlaces] = useState([]);
-  const [region, setRegion] = useState("world"); // default world
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPlaces = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/tourist-places?scope=${region}`
-        );
-        const json = await res.json();
+        setLoading(true);
 
-        const extractedPlaces =
-          json?.map((item) => ({
-            id: item._id || item.location_id,
-            name: item.name || "Unknown",
-            location: item.address || `${item.latitude}, ${item.longitude}`,
-            description: item.description || `${item.num_reviews || 0} reviews`,
-            image: item.photo?.images?.medium?.url || "",
-          })) || [];
+        const res = await fetch("http://localhost:5000/api/places");
+        if (!res.ok) throw new Error("Failed to fetch places from server");
+        const data = await res.json();
 
-        setPlaces(extractedPlaces);
+        const formattedPlaces = data.map((item) => ({
+          id: item._id,
+          name: item.name || "Unknown Place",
+          location: item.address || "",
+          description: item.description || "No description available",
+          image: item.image || item.photo?.images?.medium?.url || "https://via.placeholder.com/300x200?text=No+Image",
+        }));
+
+        setPlaces(formattedPlaces);
+        setLoading(false);
       } catch (err) {
         console.error("Fetch error:", err);
         setMessage?.({ type: "error", text: "Failed to load places ❌" });
+        setLoading(false);
       }
     };
 
     fetchPlaces();
-  }, [region, setMessage]);
+  }, [setMessage]);
 
   return (
     <div className="p-6 mt-20">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">🌍 Top Famous Places</h2>
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          className="border px-3 py-2 rounded"
-        >
-          <option value="world">World</option>
-          <option value="india">India</option>
-        </select>
-      </div>
+      <h2 className="text-2xl font-bold mb-6">🌍 Famous Places</h2>
 
-      {places.length === 0 ? (
+      {loading ? (
+        <p className="text-gray-600">Loading places...</p>
+      ) : places.length === 0 ? (
         <p className="text-gray-600">No places found.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {places.map((place, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {places.map((place) => (
             <div
-              key={place.id || index}
-              className="border p-4 rounded-lg shadow-lg hover:shadow-xl transition"
+              key={place.id}
+              className="border p-4 rounded-lg shadow hover:shadow-xl transition flex flex-col"
             >
-              <Link
-                to={
-                  place._id
-                    ? `/places/${place._id}`
-                    : `/places/external/${place.id}`
-                }
-                state={place}
-              >
+              <Link to={`/places/${place.id}`} state={place} className="flex flex-col flex-1">
                 <img
-                  src={place.image || "https://via.placeholder.com/300"}
+                  src={place.image}
                   alt={place.name}
-                  className="w-full h-40 object-cover rounded"
+                  className="w-full h-48 object-cover rounded mb-4"
+                  onError={(e) => e.target.src = "https://via.placeholder.com/300x200?text=No+Image"}
                 />
-                <h3 className="text-xl font-semibold mt-2">{place.name}</h3>
-                <p className="text-gray-600">{place.location}</p>
-                <p className="mt-2 text-sm text-gray-500">
-                  {place.description?.slice(0, 100)}...
+                <h3 className="text-xl font-semibold">{place.name}</h3>
+                {place.location && (
+                  <p className="text-gray-600 mt-1">{place.location}</p>
+                )}
+                <p className="mt-2 text-gray-500 text-sm flex-1">
+                  {place.description.length > 100
+                    ? place.description.slice(0, 100) + "..."
+                    : place.description}
                 </p>
               </Link>
             </div>
@@ -81,6 +73,7 @@ export default function Places({ setMessage }) {
     </div>
   );
 }
+
 
 // import React, { useEffect, useState } from "react";
 // import { Link } from "react-router-dom";
