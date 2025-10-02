@@ -4,39 +4,100 @@ import { Link } from "react-router-dom";
 export default function Places({ setMessage }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [country, setCountry] = useState("all");
+
+  // ✅ Country List
+  const countries = [
+    "All Countries", "India", "United States", "China", "France", "Italy",
+    "Japan", "United Kingdom", "Australia", "Brazil", "Canada", "Germany",
+    "Spain", "Thailand", "Turkey", "United Arab Emirates", "Egypt", "Russia",
+    "Mexico", "South Africa"
+  ];
+
+  const fetchPlaces = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `http://localhost:5000/api/tourist-places?city=${searchQuery}&country=${country}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch places from server");
+      const data = await res.json();
+
+      const formattedPlaces = data.map((item) => {
+  const name = item.name || item.result_object?.name || "Unknown Place";
+  const country =
+    item.address_obj?.country ||
+    item.result_object?.address_obj?.country ||
+    "Unknown Country";
+  const location =
+    item.address_obj?.city ||
+    item.result_object?.address_obj?.city ||
+    item.address ||
+    "";
+
+  return {
+    id: item.location_id || item._id || Math.random().toString(),
+    name,
+    country,
+    location,
+    description:
+      item.description ||
+      item.result_object?.geo_description ||
+      "No description available",
+    image:
+      item.photo?.images?.medium?.url ||
+      item.result_object?.photo?.images?.medium?.url ||
+      "https://via.placeholder.com/300x200?text=No+Image",
+  };
+});
+
+      setPlaces(formattedPlaces);
+      setLoading(false);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setMessage?.({ type: "error", text: "Failed to load places ❌" });
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPlaces = async () => {
-      try {
-        setLoading(true);
-
-        const res = await fetch("http://localhost:5000/api/places");
-        if (!res.ok) throw new Error("Failed to fetch places from server");
-        const data = await res.json();
-
-        const formattedPlaces = data.map((item) => ({
-          id: item._id,
-          name: item.name || "Unknown Place",
-          location: item.address || "",
-          description: item.description || "No description available",
-          image: item.image || item.photo?.images?.medium?.url || "https://via.placeholder.com/300x200?text=No+Image",
-        }));
-
-        setPlaces(formattedPlaces);
-        setLoading(false);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setMessage?.({ type: "error", text: "Failed to load places ❌" });
-        setLoading(false);
-      }
-    };
-
     fetchPlaces();
-  }, [setMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div className="p-6 mt-20">
+    <div className="p-6 mt-24"> {/* ✅ Added margin top */}
       <h2 className="text-2xl font-bold mb-6">🌍 Famous Places</h2>
+
+      {/* ✅ Search & Country Filter */}
+      <div className="flex gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search by city or place..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 border p-2 rounded"
+        />
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="border p-2 rounded"
+        >
+          {countries.map((c, idx) => (
+            <option key={idx} value={c === "All Countries" ? "all" : c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={fetchPlaces}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Search
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-gray-600">Loading places...</p>
@@ -54,9 +115,14 @@ export default function Places({ setMessage }) {
                   src={place.image}
                   alt={place.name}
                   className="w-full h-48 object-cover rounded mb-4"
-                  onError={(e) => e.target.src = "https://via.placeholder.com/300x200?text=No+Image"}
+                  onError={(e) =>
+                    (e.target.src =
+                      "https://via.placeholder.com/300x200?text=No+Image")
+                  }
                 />
                 <h3 className="text-xl font-semibold">{place.name}</h3>
+                {/* ✅ Country Name Below Title */}
+                <p className="text-gray-700 text-sm">{place.country}</p>
                 {place.location && (
                   <p className="text-gray-600 mt-1">{place.location}</p>
                 )}
@@ -73,7 +139,6 @@ export default function Places({ setMessage }) {
     </div>
   );
 }
-
 
 
 // import React, { useEffect, useState } from "react";
